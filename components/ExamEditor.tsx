@@ -191,13 +191,13 @@ const ExamEditor: React.FC<ExamEditorProps> = ({ apiKeyAvailable: envKeyAvailabl
                         onClick={() => setActiveTab('author')}
                         className={`group flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border ${activeTab === 'author' ? 'bg-blue-600 border-blue-400 shadow-lg' : 'bg-[#1e3a8a]/30 border-transparent hover:bg-[#1e3a8a]'}`}
                      >
-                        <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-lg shadow-inner">
+                        <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-lg shadow-inner shrink-0">
                              H
                         </div>
-                        <div>
+                        <div className="flex-1">
                             <p className="text-sm font-bold text-white">Nguyễn Đức Hiền</p>
                             <p className="text-[10px] text-blue-200">Giáo viên Vật Lí</p>
-                            <p className="text-[10px] text-blue-300 italic truncate w-32">Trường THCS và THPT Nguyễn Khuyến Bình Dương.</p>
+                            <p className="text-[10px] text-blue-300 italic leading-tight mt-0.5">Trường THCS và THPT Nguyễn Khuyến Bình Dương.</p>
                         </div>
                      </div>
                  </div>
@@ -481,7 +481,7 @@ const ExamEditor: React.FC<ExamEditorProps> = ({ apiKeyAvailable: envKeyAvailabl
         <div className="p-4 border-t border-blue-900/50">
             <button 
                 onClick={() => setShowSettings(true)}
-                className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-[#1e3a8a] hover:bg-blue-700 text-blue-300 hover:text-white transition-colors text-xs font-bold uppercase tracking-wider"
+                className="w-full flex items-center gap-2 py-2 rounded-lg bg-[#1e3a8a] hover:bg-blue-700 text-blue-300 hover:text-white transition-colors text-xs font-bold uppercase tracking-wider"
             >
                 <Settings size={14} /> Cài đặt
             </button>
