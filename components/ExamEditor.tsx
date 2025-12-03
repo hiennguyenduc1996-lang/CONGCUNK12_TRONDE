@@ -14,7 +14,9 @@ const ExamEditor: React.FC<ExamEditorProps> = ({ apiKeyAvailable: envKeyAvailabl
   const [loadingMessage, setLoadingMessage] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>('');
-  const [showInput, setShowInput] = useState<boolean>(false);
+  
+  // View State
+  const [viewMode, setViewMode] = useState<'empty' | 'editor' | 'preview'>('empty');
   
   // Configuration State
   const [configMode, setConfigMode] = useState<'manual' | 'quantity'>('quantity');
@@ -74,9 +76,11 @@ const ExamEditor: React.FC<ExamEditorProps> = ({ apiKeyAvailable: envKeyAvailabl
         text = text.replace(/\n\s*\n/g, '\n\n');
         
         setInputText(text);
+        setViewMode('editor');
       } else if (file.name.endsWith('.txt')) {
         const text = await file.text();
         setInputText(text);
+        setViewMode('editor');
       } else {
         setError("Vui lòng tải lên file .docx hoặc .txt, hoặc dán nội dung vào khung.");
       }
@@ -89,7 +93,6 @@ const ExamEditor: React.FC<ExamEditorProps> = ({ apiKeyAvailable: envKeyAvailabl
   };
 
   const handleStandardize = async () => {
-    // Check either Env Key or User Key
     const effectiveKey = userApiKey || (envKeyAvailable ? "ENV_KEY" : "");
     if (!effectiveKey) return setError("Vui lòng nhập API Key trong phần Cài đặt.");
     
@@ -99,10 +102,9 @@ const ExamEditor: React.FC<ExamEditorProps> = ({ apiKeyAvailable: envKeyAvailabl
     setLoadingMessage("AI đang chuẩn hóa ...");
     setError(null);
     try {
-      // Pass the actual userApiKey if it exists, otherwise undefined (service uses process.env)
       const standardized = await standardizeExamContent(inputText, userApiKey || undefined);
       setInputText(standardized);
-      setShowInput(false);
+      setViewMode('editor');
     } catch (err) {
       setError("Lỗi AI: Vui lòng kiểm tra lại API Key hoặc kết nối mạng.");
     } finally {
@@ -147,6 +149,7 @@ const ExamEditor: React.FC<ExamEditorProps> = ({ apiKeyAvailable: envKeyAvailabl
 
         setGeneratedExams(results);
         setSelectedExamIndex(0);
+        setViewMode('preview');
 
       } catch (err: any) {
         setError(err.message || "Lỗi trộn đề.");
@@ -173,8 +176,7 @@ const ExamEditor: React.FC<ExamEditorProps> = ({ apiKeyAvailable: envKeyAvailabl
   // --- SETTINGS OVERLAY COMPONENT ---
   const renderSettings = () => (
     <div className="fixed inset-0 z-50 flex animate-in fade-in duration-200">
-      
-      {/* Settings Sidebar */}
+      {/* Sidebar - Same as before */}
       <div className="w-[320px] bg-[#172554] text-white flex flex-col shadow-2xl shrink-0">
          <div className="p-6">
              <button 
@@ -194,10 +196,10 @@ const ExamEditor: React.FC<ExamEditorProps> = ({ apiKeyAvailable: envKeyAvailabl
                         <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-lg shadow-inner shrink-0">
                              H
                         </div>
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                             <p className="text-sm font-bold text-white">Nguyễn Đức Hiền</p>
                             <p className="text-[10px] text-blue-200">Giáo viên Vật Lí</p>
-                            <p className="text-[10px] text-blue-300 italic leading-tight mt-0.5">Trường THCS và THPT Nguyễn Khuyến Bình Dương.</p>
+                            <p className="text-[10px] text-blue-300 italic leading-tight mt-0.5 break-words">Trường THCS và THPT Nguyễn Khuyến Bình Dương.</p>
                         </div>
                      </div>
                  </div>
@@ -219,15 +221,12 @@ const ExamEditor: React.FC<ExamEditorProps> = ({ apiKeyAvailable: envKeyAvailabl
          </div>
       </div>
 
-      {/* Settings Content */}
+      {/* Content - Same as before */}
       <div className="flex-1 bg-[#f1f5f9] flex items-center justify-center p-8 relative">
-          
           <div className="absolute top-4 right-4 opacity-10">
                {activeTab === 'author' ? <User size={400} /> : <Settings size={400} />}
           </div>
-
           <div className="w-full max-w-2xl z-10">
-              
               {activeTab === 'author' && (
                   <div className="bg-white rounded-2xl shadow-xl p-10 text-center animate-in zoom-in-95 duration-300">
                       <div className="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center text-4xl font-bold text-white mx-auto mb-6 shadow-lg shadow-blue-200">
@@ -247,7 +246,6 @@ const ExamEditor: React.FC<ExamEditorProps> = ({ apiKeyAvailable: envKeyAvailabl
                       </div>
                   </div>
               )}
-
               {activeTab === 'config' && (
                   <div className="bg-white rounded-2xl shadow-xl p-10 animate-in zoom-in-95 duration-300">
                       <div className="flex items-center gap-4 mb-8">
@@ -277,12 +275,10 @@ const ExamEditor: React.FC<ExamEditorProps> = ({ apiKeyAvailable: envKeyAvailabl
                                   {showKey ? <EyeOff size={18} /> : <Eye size={18} />}
                               </button>
                           </div>
-                          
                           <div className="flex items-center justify-between mt-2">
                              <p className="text-xs text-slate-400">Key được lưu trong trình duyệt của bạn. <span className="text-emerald-600 font-medium">• Đang dùng Key cá nhân</span></p>
                           </div>
                       </div>
-
                       <div className="mt-8 pt-6 border-t border-slate-100">
                           <h4 className="font-bold text-slate-700 mb-2">Hướng dẫn lấy Key:</h4>
                           <ul className="text-sm text-slate-600 space-y-2 list-disc pl-5">
@@ -327,16 +323,33 @@ const ExamEditor: React.FC<ExamEditorProps> = ({ apiKeyAvailable: envKeyAvailabl
                     Tải Lên Tài Liệu
                 </div>
                 
-                <label className="flex flex-col gap-3 cursor-pointer border border-dashed border-blue-700 bg-[#1e3a8a]/30 rounded-xl p-6 hover:bg-[#1e3a8a]/50 hover:border-blue-500 transition-all group text-center relative overflow-hidden">
+                <label className={`
+                    flex flex-col gap-3 cursor-pointer border border-dashed rounded-xl p-6 transition-all group text-center relative overflow-hidden
+                    ${fileName 
+                        ? 'border-emerald-500 bg-emerald-500/10' 
+                        : 'border-blue-700 bg-[#1e3a8a]/30 hover:bg-[#1e3a8a]/50 hover:border-blue-500'}
+                `}>
                     <input type="file" accept=".docx,.txt" className="hidden" onChange={handleFileUpload} />
-                    <div className="w-12 h-12 bg-[#1e3a8a] text-blue-300 rounded-full flex items-center justify-center mx-auto group-hover:scale-110 group-hover:text-white transition-all shadow-inner">
-                        {inputText ? <FileCheck size={24} /> : <Upload size={24} />}
-                    </div>
-                    <div className="z-10">
-                         <span className="text-sm font-semibold text-blue-100 group-hover:text-white block mb-1">
-                            {fileName ? fileName : "Kéo thả PDF / DOCX"}
-                        </span>
-                    </div>
+                    
+                    {fileName ? (
+                         <div className="flex flex-col items-center animate-in zoom-in duration-300">
+                             <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center mb-2 shadow-lg shadow-emerald-900/50">
+                                 <CheckCircle2 size={28} className="text-white" />
+                             </div>
+                             <span className="text-sm font-bold text-emerald-400 break-all px-2">{fileName}</span>
+                         </div>
+                    ) : (
+                        <>
+                            <div className="w-12 h-12 bg-[#1e3a8a] text-blue-300 rounded-full flex items-center justify-center mx-auto group-hover:scale-110 group-hover:text-white transition-all shadow-inner">
+                                <Upload size={24} />
+                            </div>
+                            <div className="z-10">
+                                <span className="text-sm font-semibold text-blue-100 group-hover:text-white block mb-1">
+                                    Kéo thả PDF / DOCX
+                                </span>
+                            </div>
+                        </>
+                    )}
                 </label>
 
                 {inputText && (
@@ -345,21 +358,12 @@ const ExamEditor: React.FC<ExamEditorProps> = ({ apiKeyAvailable: envKeyAvailabl
                              <CheckCircle2 size={12} className="text-emerald-400"/> Đã nhận nội dung
                          </span>
                          <button 
-                             onClick={() => setShowInput(!showInput)}
-                             className="hover:text-white underline decoration-blue-500/50 underline-offset-2"
+                             onClick={() => setViewMode('editor')}
+                             className={`hover:text-white underline decoration-blue-500/50 underline-offset-2 ${viewMode === 'editor' ? 'text-white font-bold' : ''}`}
                          >
-                             {showInput ? "Ẩn xem trước" : "Xem nội dung"}
+                             Xem nội dung
                          </button>
                     </div>
-                )}
-                
-                {showInput && (
-                    <textarea 
-                        value={inputText}
-                        onChange={(e) => setInputText(e.target.value)}
-                        className="w-full h-32 bg-[#0f172a] border border-blue-900 rounded-lg p-2 text-xs font-mono text-blue-100 focus:outline-none focus:border-blue-500"
-                        placeholder="Nội dung..."
-                    />
                 )}
             </div>
 
@@ -449,10 +453,13 @@ const ExamEditor: React.FC<ExamEditorProps> = ({ apiKeyAvailable: envKeyAvailabl
                         {generatedExams.map((exam, idx) => (
                             <div 
                                 key={idx}
-                                onClick={() => setSelectedExamIndex(idx)}
+                                onClick={() => {
+                                    setSelectedExamIndex(idx);
+                                    setViewMode('preview');
+                                }}
                                 className={`
                                     flex items-center justify-between p-2 rounded-lg cursor-pointer transition-all border
-                                    ${idx === selectedExamIndex 
+                                    ${idx === selectedExamIndex && viewMode === 'preview'
                                         ? 'bg-blue-600 border-blue-500 text-white shadow-md' 
                                         : 'bg-[#1e3a8a]/30 border-transparent text-blue-200 hover:bg-[#1e3a8a] hover:text-white'
                                     }
@@ -497,9 +504,9 @@ const ExamEditor: React.FC<ExamEditorProps> = ({ apiKeyAvailable: envKeyAvailabl
         <div className="h-[60px] bg-white border-b border-slate-200 flex items-center justify-between px-6 shadow-sm shrink-0">
              <div className="flex items-center gap-2 text-slate-700 font-bold">
                  <FileText size={18} className="text-blue-600" />
-                 Xem trước đề thi
+                 {viewMode === 'editor' ? 'Chỉnh sửa nội dung' : 'Xem trước đề thi'}
              </div>
-             {currentExam && (
+             {viewMode === 'preview' && currentExam && (
                  <button 
                     onClick={() => downloadExam(currentExam.html, currentExam.code)}
                     className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-all"
@@ -516,17 +523,26 @@ const ExamEditor: React.FC<ExamEditorProps> = ({ apiKeyAvailable: envKeyAvailabl
                     <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
                     <p className="font-medium animate-pulse">{loadingMessage}</p>
                 </div>
-            ) : !currentExam ? (
+            ) : viewMode === 'editor' ? (
+                 <div className="bg-white shadow-xl min-h-[29.7cm] w-[21cm] p-[2cm] animate-in zoom-in-95 duration-300">
+                      <textarea 
+                        value={inputText}
+                        onChange={(e) => setInputText(e.target.value)}
+                        className="w-full h-full min-h-[80vh] font-mono text-base leading-relaxed outline-none resize-none text-black bg-white"
+                        placeholder="Nội dung đề thi sẽ hiển thị ở đây..."
+                      />
+                 </div>
+            ) : viewMode === 'preview' && currentExam ? (
+                <div className="bg-white shadow-xl min-h-[29.7cm] w-[21cm] p-[2cm] text-[12pt] text-black font-serif leading-normal animate-in zoom-in-95 duration-300">
+                    <div dangerouslySetInnerHTML={{ __html: currentExam.html }} className="preview-content" />
+                </div>
+            ) : (
                  <div className="flex flex-col items-center justify-center text-slate-300 h-full">
                      <div className="w-24 h-24 bg-white rounded-full shadow-sm flex items-center justify-center mb-4">
                          <FileText size={40} className="text-slate-200" />
                      </div>
-                     <p className="font-medium text-slate-400">Chưa có đề thi nào</p>
+                     <p className="font-medium text-slate-400">Chưa có nội dung hiển thị</p>
                  </div>
-            ) : (
-                <div className="bg-white shadow-xl min-h-[29.7cm] w-[21cm] p-[2cm] text-[12pt] text-black font-serif leading-normal animate-in zoom-in-95 duration-300">
-                    <div dangerouslySetInnerHTML={{ __html: currentExam.html }} className="preview-content" />
-                </div>
             )}
         </div>
 

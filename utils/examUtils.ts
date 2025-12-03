@@ -392,28 +392,27 @@ export const generateWordHtml = (exam: { data: ExamData; code: string }): string
   });
 
   // Answer Key Table
-  let answerTable = `
-    <div style='margin-top: 30px; border-top: 2px solid #000; padding-top: 20px;'>
-    <h3 style='text-align: center;'>ĐÁP ÁN - MÃ ĐỀ: ${exam.code}</h3>
-    <table style='width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11pt;'>
-  `;
-  
-  // 10 columns per row
+  // Format: 10 columns, Black border, Blue text, Format "1. A"
   const cols = 10;
   const rows = Math.ceil(allQuestions.length / cols);
   
+  let answerTable = `
+    <div style='margin-top: 30px; border-top: 2px solid #000; padding-top: 20px;'>
+    <h3 style='text-align: center; color: #1d4ed8;'>ĐÁP ÁN - MÃ ĐỀ: ${exam.code}</h3>
+    <table style='width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11pt; border: 2px solid #000;'>
+  `;
+
   for (let r = 0; r < rows; r++) {
       answerTable += "<tr>";
       for (let c = 0; c < cols; c++) {
           const idx = r * cols + c;
           if (idx < allQuestions.length) {
               const q = allQuestions[idx];
-              answerTable += `<td style='border: 1px solid #000; padding: 5px; text-align: center; background-color: #f0fdf4;'>
-                  <div style='font-weight: bold; font-size: 0.9em; color: #333;'>${q.number}</div>
-                  <div style='font-weight: bold; color: #d32f2f; font-size: 1.1em;'>${q.answer}</div>
+              answerTable += `<td style='border: 1px solid #000; padding: 8px; text-align: center;'>
+                  <span style='font-weight: bold; color: #1e3a8a;'>${q.number}. ${q.answer}</span>
               </td>`;
           } else {
-              answerTable += `<td style='border: 1px solid #000; padding: 5px;'></td>`;
+              answerTable += `<td style='border: 1px solid #000; padding: 8px;'></td>`;
           }
       }
       answerTable += "</tr>";
